@@ -1,11 +1,23 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Feedback, ContactType } from '../shared/feedback';
+import { flyInOut, expand, visibility } from '../animations/app.animation';
+import { FeedbackService } from '../services/feedback.service';
+
 
 @Component({
   selector: 'app-contact',
   templateUrl: './contact.component.html',
-  styleUrls: ['./contact.component.scss']
+  styleUrls: ['./contact.component.scss'],
+  host: {
+  '[@flyInOut]': 'true',
+  'style': 'display: block;'
+  },
+  animations: [
+    flyInOut(),
+    expand(),
+    visibility()
+  ]
 })
 export class ContactComponent implements OnInit {
 
@@ -13,8 +25,12 @@ export class ContactComponent implements OnInit {
 	feedbackForm: FormGroup;
 	feedback: Feedback;
 	contactType=ContactType;
+  errMess: string;
+  showspinner = false;
+  showform = true;
+  showfeedback = false;
 
-  constructor(private fb: FormBuilder) { 
+  constructor(private fb: FormBuilder, private feedbackservice: FeedbackService) { 
   	this.createForm();
   }
 
@@ -87,8 +103,22 @@ export class ContactComponent implements OnInit {
   }
 
   onSubmit() {
+    this.showform = false;
+    this.showspinner = true;
     this.feedback = this.feedbackForm.value;
     console.log(this.feedback);
+    this.feedbackservice.postFeedback(this.feedback).subscribe(feedback => { 
+      this.feedback = feedback;
+      this.showspinner = false;
+      this.showfeedback = true;
+      setTimeout(() => {
+          this.feedback = null;
+          this.showfeedback = false;
+          this.showform = true;
+        }, 5000);
+     },
+     errmess => { this.feedback = null; this.errMess = <any>errmess; });
+
     this.feedbackForm.reset({
       firstname: '',
       lastname: '',
